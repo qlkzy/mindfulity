@@ -64,7 +64,7 @@ def read_config_file(filename):
 
     # check that all times are valid
     valid_ranges = {'start_hour': (0, 23),
-                    'end_hour': (0, 23),
+                    'end_hour': (0, 24),
                     'start_min': (0, 59),
                     'end_min': (0, 59)}
 
