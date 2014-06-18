@@ -46,11 +46,11 @@ A rule consists of six fields:
   (these are separate fields)
 - The hour and minute at which to stop blocking
   (these are separate fields)
-- The day types on which to block
+- The days
 
 So a single rule looks something like this:
 
-    example.com 19 00 08 15 weekdays
+    example.com 19 00 08 15 0,1,2,3,4
 
 Taking that apart:
 
@@ -65,11 +65,10 @@ Taken together, those give 19:00 (7pm)
 `08` and `15` are similarly the hour and minute part
 of when to stop blocking (8:15am).
 
-`weekdays` specifies that the rule should only apply on
-weekdays (Monday-Friday). You could also write `weekends`,
-to specify that the rule only applies on Saturday and
-Sunday, or `weekdays,weekends`, to specify that the rule
-applies to all days of the week.
+`0,1,2,3,4` specifies that the rule should only apply on
+weekdays (Monday-Friday). This field contains a comma-separated
+list of day numbers; days are numbered from 0 (Monday) through
+6 (Sunday).
 
 For more examples, see the comments in the provided
 configuration file.
@@ -85,10 +84,7 @@ by the crontab fragment in `mindfulity.cron`, which is copied
 to `/etc/cron.d/mindfulity` by the install script.
 
 The provided crontab fragment will apply the rules every
-fifteen minutes.
-
-## Startup setup
-
+fifteen minutes, and on boot.
 
 
 ## Troubleshooting
