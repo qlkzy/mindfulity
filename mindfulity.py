@@ -2,8 +2,19 @@
 
 import re
 import sys
+import time
 
 from collections import namedtuple
+
+# comment signature for /etc/hosts lines added by this program
+SIGNATURE = 'mindfulity'
+
+# weekend days days of week are 0-indexed starting from Monday
+WEEKEND_DAYS = {5, 6}
+
+# location of the config file
+CONFIG_FILE = '/etc/mindfulity.conf'
+
 
 Rule = namedtuple('Rule',
                   ['domain',
@@ -19,11 +30,14 @@ def require_int_in_range(value, minval, maxval, fmt):
         assert v >= minval
         assert v <= maxval
     except:
-        sys.exit(fmt)
+        sys.exit(fmt.format(value))
 
 def read_config_file(filename):
     # read config file into list of (linenumber, line) pairs
-    lines = [(i, line.strip()) for i, line in enumerate(open(filename, 'r'))]
+    #
+    # we carry the line number throughout this function, so we can
+    # tell the user the location of any errors
+    lines = [(i+1, line.strip()) for i, line in enumerate(open(filename, 'r'))]
 
     # strip out comments
     comment_regex = r'\s*#.*$'
@@ -46,7 +60,7 @@ def read_config_file(filename):
             sys.exit(msg)
 
     # construct Rules from lines
-    rules = [(i, Rule(*line)) for i, line in lines]
+    rules = {(i, Rule(*line)) for i, line in lines}
 
     # check that all times are valid
     valid_ranges = {'start_hour': (0, 23),
@@ -65,7 +79,7 @@ def read_config_file(filename):
         maxval = bounds[1]
         name = human_names[field]
         for i, rule in rules:
-            fmt = ("{}:{}: Error: the field {} needs to have a value" +
+            fmt = ("{}:{}: Error: the field {} needs to have a value " +
                    "in the range [{}, {}], but the given value was {{}}").format(
                        filename, i, field, minval, maxval)
             require_int_in_range(rule._asdict()[field], minval, maxval, fmt)
@@ -100,17 +114,24 @@ def read_config_file(filename):
 
 def read_hosts_file():
     # read hosts file into list of lines
+    #
+    # not really worth being able to customize an option that would have been
+    # the same on every unix everywhere 30 years ago
+    lines = [line for line in open('/etc/hosts', 'r')]
 
     # strip out lines previously written by mindfulity
+    lines = [line for line in lines if not line.endswith("# {}\n".format(SIGNATURE))]
 
     # return the list of lines
-    pass
+    return lines
 
 def write_hosts_file(lines):
     # build a string from the list of lines
+    contents = ''.join(lines)
 
     # write the whole string at once into the hosts file
-    pass
+    with open('/etc/hosts', 'w') as f:
+        f.write(contents)
 
 def normalize_rules(rules):
     # filter out all rules which are already in normal form
@@ -143,21 +164,56 @@ def pretty_print_rules(rules):
 
 def get_active_rules(rules):
     # get the current time
+    now = time.localtime()
+    hh  = now.tm_hour
+    mm  = now.tm_min
+    dow = now.tm_wday
 
     # filter out all rules which don't apply because it's the
     # wrong kind of day
-
+    if dow in WEEKEND_DAYS:
+        flag = 'weekends'
+    else:
+        flag = 'weekdays'
+    rules = {r for r in rules if r.flag == flag}
+        
     # filter out rules which start too late
+    rules = {r for r in rules if (r.start_hour, r.start_min) <= (hh, mm)}
 
     # filter out rules which end too early
+    rules = {r for r in rules if (hh, mm) < (r.end_hour, r.end_min)}
 
     # return the set of all active rules
-    pass
+    return rules
 
 def lines_for_rules(rules):
     # get the set of all blocked domains
     domains = {rule.domain for rule in rules}
 
     # return a list of lines resolving blocked domains to localhost
-    fmt = "127.0.0.1 {} # mindfulity"
+    fmt = "127.0.0.1\t{} # mindfulity\n"
     return [fmt.format(domain) for domain in domains]
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        # default: update rules
+        hosts = read_hosts_file()
+        try:
+            rules = normalize_rules(read_config_file(CONFIG_FILE))
+            active = get_active_rules(rules)
+            lines = lines_for_rules(active)
+            write_hosts_file(hosts + lines)
+        except:
+            # if any of the above fails, clear all the blocks
+            write_hosts_file(hosts)
+            raise
+    elif sys.argv[1] == 'check':
+        # check that the config file is correct
+        r = read_config_file(CONFIG_FILE)
+        pretty_print_rules(r)
+    elif sys.argv[1] == 'clear':
+        # clear all blocks
+        write_hosts_file(read_hosts_file())
+    else:
+        sys.exit("Unknown command {}".format(sys.argv[1]))
