@@ -22,7 +22,7 @@ Rule = namedtuple('Rule',
                    'start_min',
                    'end_hour',
                    'end_min',
-                   'flag'])
+                   'days'])
 
 def require_int_in_range(value, minval, maxval, fmt):
     try:
@@ -84,19 +84,16 @@ def read_config_file(filename):
                        filename, i, field, minval, maxval)
             require_int_in_range(rule._asdict()[field], minval, maxval, fmt)
 
-    # split day flags
-    rules = frozenset.union(*
-        {frozenset({(i, Rule(rule.domain,
-                             rule.start_hour, rule.start_min,
-                             rule.end_hour, rule.end_min,
-                             flag))
-                    for flag in rule.flag.split(',')}) for i, rule in rules})
+    # split days
+    rules = {(i, Rule(r.domain, r.start_hour, r.start_min,
+                      r.end_hour, r.end_min, tuple(r.days.split(','))))
+             for i, r in rules}
 
-    # check that all day flags are valid
+    # check that all days are valid
     for i, rule in rules:
-        if rule.flag != 'weekdays' and rule.flag != 'weekends':
-            sys.exit("{}:{}: Error: 'flags' field contains the invalid flag {}".format(
-                filename, i, rule.flag))
+        for d in rule.days:
+            fmt = "{}:{}: Error: invalid day {{}}".format(filename, i)
+            require_int_in_range(d, 0, 6, fmt)
 
     # we have now done all syntax checking on config file, so we can drop the line numbers
     rules = [rule for i, rule in rules]
@@ -106,7 +103,13 @@ def read_config_file(filename):
     rules = {Rule(r.domain,
                   int(r.start_hour), int(r.start_min),
                   int(r.end_hour), int(r.end_min),
-                  r.flag)
+                  r.days)
+             for r in rules}
+
+    # all days were represented by proper integers, so we can do this conversion without
+    # checking again
+    rules = {Rule(r.domain, r.start_hour, r.start_min,
+                  r.end_hour, r.end_min, tuple((int(d) for d in r.days)))
              for r in rules}
 
     # return the set of all rules
@@ -137,7 +140,7 @@ def normalize_rules(rules):
     # filter out all rules which are already in normal form
     normal_rules = {r for r in rules
                     if (r.start_hour, r.start_min) < (r.end_hour, r.end_min)}
-    
+
     abnormal_rules = rules - normal_rules
 
     # create 'evening' and 'morning' rules for each rule not
@@ -145,12 +148,12 @@ def normalize_rules(rules):
     morning_rules = {Rule(r.domain,
                           0, 0,
                           r.end_hour, r.end_min,
-                          r.flag)
+                          r.days)
                      for r in rules}
     evening_rules = {Rule(r.domain,
                           r.start_hour, r.start_min,
                           23, 59,
-                          r.flag)
+                          r.days)
                      for r in rules}
 
     # return the set of all normal-form rules
@@ -170,13 +173,9 @@ def get_active_rules(rules):
     dow = now.tm_wday
 
     # filter out all rules which don't apply because it's the
-    # wrong kind of day
-    if dow in WEEKEND_DAYS:
-        flag = 'weekends'
-    else:
-        flag = 'weekdays'
-    rules = {r for r in rules if r.flag == flag}
-        
+    # wrong day
+    rules = {r for r in rules if dow in r.days}
+
     # filter out rules which start too late
     rules = {r for r in rules if (r.start_hour, r.start_min) <= (hh, mm)}
 
