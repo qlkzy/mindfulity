@@ -13,7 +13,7 @@ SIGNATURE = 'mindfulity'
 WEEKEND_DAYS = {5, 6}
 
 # location of the config file
-CONFIG_FILE = '/etc/mindfulity.conf'
+CONFIG_FILE = '/usr/local/etc/mindfulity.conf'
 
 
 Rule = namedtuple('Rule',
