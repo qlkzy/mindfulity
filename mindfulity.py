@@ -9,9 +9,6 @@ from collections import namedtuple
 # comment signature for /etc/hosts lines added by this program
 SIGNATURE = 'mindfulity'
 
-# weekend days days of week are 0-indexed starting from Monday
-WEEKEND_DAYS = {5, 6}
-
 # location of the config file
 CONFIG_FILE = '/usr/local/etc/mindfulity.conf'
 
