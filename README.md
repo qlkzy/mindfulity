@@ -5,15 +5,10 @@ time ranges.
 
 ## Installation
 
-`mindfulity` requires Python 2 (tested on Python 2.7). If Python is
-not currently installed on your system, you should be able to install
-it through your package manager. On a Debian-based system (including
-Ubuntu and Mint), execute the command:
+`mindfulity` requires Python 2 (tested on Python 2.7). This should already
+be installed on your system.
 
-    sudo apt-get install python
-
-Then, change into the directory into which you installed `mindfulity`,
-and run:
+In the directory into which you extracted mindfulity, run:
 
     sudo ./install.sh
 
@@ -30,7 +25,7 @@ To use the program, you will want to define some blocking rules. Run
 (replacing `nano` with your preferred editor).
 
 Reading the comments, you can probably copy and modify one of the example
-rules to suit your needs.
+rules to suit your needs; see the next section for more details.
 
 ## Configuration
 
