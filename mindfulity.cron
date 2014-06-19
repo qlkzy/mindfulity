@@ -4,4 +4,4 @@
 01,16,31,46 *     * * *     root  /usr/local/bin/mindfulity 
 
 # run on reboot
-@reboot /usr/local/bin/mindfulity
+@reboot root /usr/local/bin/mindfulity
