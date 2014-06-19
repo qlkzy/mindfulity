@@ -46,7 +46,7 @@ A rule consists of six fields:
   (these are separate fields)
 - The hour and minute at which to stop blocking
   (these are separate fields)
-- The days
+- The days on which to block
 
 So a single rule looks something like this:
 

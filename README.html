@@ -1,0 +1,153 @@
+<html>
+<head>
+<title>mindfulity - README</title>
+</head>
+<body>
+
+<h1>mindfulity</h1>
+
+<p><code>mindfulity</code> is a program to block specified servers within defined
+time ranges.</p>
+
+<h2>Installation</h2>
+
+<p><code>mindfulity</code> requires Python 2 (tested on Python 2.7). If Python is
+not currently installed on your system, you should be able to install
+it through your package manager. On a Debian-based system (including
+Ubuntu and Mint), execute the command:</p>
+
+<pre><code>sudo apt-get install python
+</code></pre>
+
+<p>Then, change into the directory into which you installed <code>mindfulity</code>,
+and run:</p>
+
+<pre><code>sudo ./install.sh
+</code></pre>
+
+<p>This will install the <code>mindfulity</code> script into <code>/usr/local/bin/mindfulity</code>,
+the configuration file into <code>/usr/local/etc/mindfulity.conf</code>, and a
+crontab fragment to run mindfulity into <code>/etc/cron.d</code>.</p>
+
+<h2>Quick Start</h2>
+
+<p>To use the program, you will want to define some blocking rules. Run</p>
+
+<pre><code>sudo nano /usr/local/etc/mindfulity.conf
+</code></pre>
+
+<p>(replacing <code>nano</code> with your preferred editor).</p>
+
+<p>Reading the comments, you can probably copy and modify one of the example
+rules to suit your needs.</p>
+
+<h2>Configuration</h2>
+
+<p>Each line in the configuration file is either:</p>
+
+<ul>
+<li>A blank line or comment (starting with <code>#</code>), which is ignored</li>
+<li>A rule</li>
+</ul>
+
+<p>A rule consists of six fields:</p>
+
+<ul>
+<li>The domain to block</li>
+<li>The hour and minute at which to start blocking 
+(these are separate fields)</li>
+<li>The hour and minute at which to stop blocking
+(these are separate fields)</li>
+<li>The days on which to block</li>
+</ul>
+
+<p>So a single rule looks something like this:</p>
+
+<pre><code>example.com 19 00 08 15 0,1,2,3,4
+</code></pre>
+
+<p>Taking that apart:</p>
+
+<p><code>example.com</code> is the domain to block.</p>
+
+<p><code>19</code> is the hour-part of when to start blocking</p>
+
+<p><code>00</code> is the minute-part of when to start blocking</p>
+
+<p>Taken together, those give 19:00 (7pm)</p>
+
+<p><code>08</code> and <code>15</code> are similarly the hour and minute part
+of when to stop blocking (8:15am).</p>
+
+<p><code>0,1,2,3,4</code> specifies that the rule should only apply on
+weekdays (Monday-Friday). This field contains a comma-separated
+list of day numbers; days are numbered from 0 (Monday) through
+6 (Sunday).</p>
+
+<p>For more examples, see the comments in the provided
+configuration file.</p>
+
+<h2>Cron setup</h2>
+
+<p>Each time the script is run, it applies the blocks
+that should be currently active. To keep these up-to-date,
+the script needs to be regularly re-run.</p>
+
+<p>This is accomplished automatically by a cron job, specified
+by the crontab fragment in <code>mindfulity.cron</code>, which is copied
+to <code>/etc/cron.d/mindfulity</code> by the install script.</p>
+
+<p>The provided crontab fragment will apply the rules every
+fifteen minutes, and on boot.</p>
+
+<h2>Troubleshooting</h2>
+
+<p>If you think that the script is not working correctly,
+the first thing to check is that there are no problems
+with the configuration file. Try running</p>
+
+<pre><code>mindfulity check
+</code></pre>
+
+<p>That will read the configuration file, and print out
+all the rules it finds. If there are any syntax errors
+in the file, this will print out an error message with
+a brief description of the error, and the line number
+on which it was found.</p>
+
+<p>If that looks good, try running</p>
+
+<pre><code>sudo mindfulity
+</code></pre>
+
+<p>That will apply the currently-active rules. If the blocking
+behaviour is wrong before running this command, but correct
+afterwards, then the cron job is not running the script at
+the approppriate time---see above, in the section "Cron setup".</p>
+
+<p>Finally, you can look in the file <code>/etc/hosts</code>. This is
+the file that mindfulity modifies to block particular
+domains. If blocks should be currently active, there
+should be a line for each domain to be blocked, which
+ends with a comment containing just <code>mindfulity</code>. So if you
+were blocking <code>example.com</code>, there would be a line</p>
+
+<pre><code>127.0.0.1   example.com # mindfulity
+</code></pre>
+
+<p>At the end of <code>/etc/hosts</code>.</p>
+
+<p>If you are having trouble with mindfulity, you can run</p>
+
+<pre><code>sudo mindfulity clear
+</code></pre>
+
+<p>to remove any rules that mindfulity has applied. This
+is also what mindfulity will do if it is run automatically
+and encounters an error with the configuration file.</p>
+
+<p>Of course, if mindfulity is being run by a cron job, that will
+quickly revert the situation back to that specified by the
+configuration file unless you disable it.</p>
+</body>
+</html>
